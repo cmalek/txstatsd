@@ -19,7 +19,7 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.plugin import IPlugin
 from twisted.application.service import IServiceMaker
@@ -27,8 +27,8 @@ from twisted.application.service import IServiceMaker
 from txstatsd import service
 
 
+@implementer(IServiceMaker, IPlugin)
 class StatsDServiceMaker(object):
-    implements(IServiceMaker, IPlugin)
     tapname = "statsd"
     description = "Collect and aggregate stats for graphite."
     options = service.StatsDOptions

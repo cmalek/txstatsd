@@ -50,6 +50,7 @@ class ConsistentHashRing:
         self.ring = [entry for entry in self.ring if entry[1] != node]
 
     def get_node(self, key):
+        print(f"key: {key}")
         assert self.ring
         position = self.compute_ring_position(key)
         search_entry = (position, None)

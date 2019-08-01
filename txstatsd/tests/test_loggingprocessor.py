@@ -72,13 +72,14 @@ class TestLoggingMessageProcessor(TestCase):
     def test_logger_plugin(self):
         logger = TestLogger()
         processor = LoggingMessageProcessor(
-            logger, plugins=[distinct_metric_factory],
-            time_function=lambda: 42)
-        msg_in = "gorets:17|pd"
+            logger,
+            plugins=[distinct_metric_factory],
+            time_function=lambda: 42
+        )
+        msg_in = b"gorets:17|pd"
         processor.process(msg_in)
         list(processor.flush())
-        messages = processor.plugin_metrics['gorets'].flush(
-            10, processor.time_function())
+        messages = processor.plugin_metrics[b'gorets'].flush(10, processor.time_function())
         expected = ["In: %s" % msg_in] + ["Out: %s %s %s" % message
                                           for message in messages]
         self.assertFalse(set(expected).difference(logger.log.splitlines()))

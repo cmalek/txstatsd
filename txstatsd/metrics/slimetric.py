@@ -77,13 +77,13 @@ class SLIMetricReporter(object):
         if value == "error":
             self.error += 1
         else:
-            for k, condition in self.conditions.items():
+            for k, condition in list(self.conditions.items()):
                 if condition(value, size):
                     self.counts[k] += 1
 
     def flush(self, interval, timestamp):
         metrics = []
-        for item, value in self.counts.items():
+        for item, value in list(self.counts.items()):
             metrics.append((self.name + ".count_" + item,
                             value, timestamp))
         metrics.append((self.name + ".count",

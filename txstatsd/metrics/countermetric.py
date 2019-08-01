@@ -76,7 +76,7 @@ class CounterMetricReporter(object):
         self.name = name
 
         if prefix:
-            prefix += "."
+            prefix += b"."
         self.prefix = prefix
         self.count = 0
 
@@ -84,5 +84,5 @@ class CounterMetricReporter(object):
         self.count = value
 
     def report(self, timestamp):
-        return [(self.prefix + self.name + ".count",
+        return [(self.prefix + self.name + b".count",
                  math.trunc(self.count), timestamp)]

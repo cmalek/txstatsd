@@ -39,21 +39,21 @@ class FlushMessagesTest(TestCase):
         """
         configurable_processor = ConfigurableMessageProcessor(
             time_function=lambda: 42)
-        configurable_processor.process("gorets:17|c")
+        configurable_processor.process(b"gorets:17|c")
         messages = list(configurable_processor.flush())
-        self.assertEqual(("gorets.count", 17, 42), messages[0])
-        self.assertEqual(("statsd.numStats", 1, 42), messages[1])
+        self.assertEqual((b"gorets.count", 17, 42), messages[0])
+        self.assertEqual((b"statsd.numStats", 1, 42), messages[1])
 
     def test_flush_counter_with_prefix(self):
         """
         Ensure the prefix features if one is supplied.
         """
         configurable_processor = ConfigurableMessageProcessor(
-            time_function=lambda: 42, message_prefix="test.metric")
-        configurable_processor.process("gorets:17|c")
+            time_function=lambda: 42, message_prefix=b"test.metric")
+        configurable_processor.process(b"gorets:17|c")
         messages = list(configurable_processor.flush())
-        self.assertEqual(("test.metric.gorets.count", 17, 42), messages[0])
-        self.assertEqual(("test.metric.statsd.numStats", 1, 42),
+        self.assertEqual((b"test.metric.gorets.count", 17, 42), messages[0])
+        self.assertEqual((b"test.metric.statsd.numStats", 1, 42),
                          messages[1])
 
     def test_flush_counter_with_internal_prefix(self):
@@ -61,24 +61,24 @@ class FlushMessagesTest(TestCase):
         Ensure the prefix features if one is supplied.
         """
         configurable_processor = ConfigurableMessageProcessor(
-            time_function=lambda: 42, message_prefix="test.metric",
-            internal_metrics_prefix="statsd.foo.")
-        configurable_processor.process("gorets:17|c")
+            time_function=lambda: 42, message_prefix=b"test.metric",
+            internal_metrics_prefix=b"statsd.foo.")
+        configurable_processor.process(b"gorets:17|c")
         messages = list(configurable_processor.flush())
-        self.assertEqual(("test.metric.gorets.count", 17, 42), messages[0])
-        self.assertEqual(("statsd.foo.numStats", 1, 42),
-                         messages[1])
+        self.assertEqual((b"test.metric.gorets.count", 17, 42), messages[0])
+        self.assertEqual((b"statsd.foo.numStats", 1, 42), messages[1])
 
     def test_flush_plugin(self):
         """
         Ensure the prefix features if one is supplied.
         """
         configurable_processor = ConfigurableMessageProcessor(
-            time_function=lambda: 42, message_prefix="test.metric",
+            time_function=lambda: 42, message_prefix=b"test.metric",
             plugins=[distinct_metric_factory])
-        configurable_processor.process("gorets:17|pd")
+        configurable_processor.process(b"gorets:17|pd")
         messages = list(configurable_processor.flush())
-        self.assertEquals(("test.metric.gorets.count", 1, 42), messages[0])
+        print(messages)
+        self.assertEqual((b"test.metric.gorets.count", 1, 42), messages[0])
 
     def test_flush_single_timer_single_time(self):
         """
@@ -91,21 +91,21 @@ class FlushMessagesTest(TestCase):
         configurable_processor = ConfigurableMessageProcessor(
             time_function=lambda: _now)
 
-        configurable_processor.process("glork:24|ms")
+        configurable_processor.process(b"glork:24|ms")
         _now = 42
 
         messages = list(configurable_processor.flush())
         messages.sort()
 
         expected = [
-            ("glork.999percentile", 24.0, 42),
-            ("glork.99percentile", 24.0, 42),
-            ('glork.count', 1.0, 42),
-            ("glork.max", 24.0, 42),
-            ("glork.mean", 24.0, 42),
-            ("glork.min", 24.0, 42),
-            ('glork.rate', 0.5, 42),
-            ("glork.stddev", 0.0, 42),
+            (b"glork.999percentile", 24.0, 42),
+            (b"glork.99percentile", 24.0, 42),
+            (b'glork.count', 1.0, 42),
+            (b"glork.max", 24.0, 42),
+            (b"glork.mean", 24.0, 42),
+            (b"glork.min", 24.0, 42),
+            (b'glork.rate', 0.5, 42),
+            (b"glork.stddev", 0.0, 42),
             ]
         expected.sort()
 
@@ -120,26 +120,26 @@ class FlushMessagesTest(TestCase):
         configurable_processor = ConfigurableMessageProcessor(
             time_function=lambda: _now)
 
-        configurable_processor.process("glork:4|ms")
-        configurable_processor.process("glork:8|ms")
-        configurable_processor.process("glork:15|ms")
-        configurable_processor.process("glork:16|ms")
-        configurable_processor.process("glork:23|ms")
-        configurable_processor.process("glork:42|ms")
+        configurable_processor.process(b"glork:4|ms")
+        configurable_processor.process(b"glork:8|ms")
+        configurable_processor.process(b"glork:15|ms")
+        configurable_processor.process(b"glork:16|ms")
+        configurable_processor.process(b"glork:23|ms")
+        configurable_processor.process(b"glork:42|ms")
 
         _now = 42
         messages = list(configurable_processor.flush())
         messages.sort()
 
         expected = [
-            ("glork.999percentile", 42.0, 42),
-            ("glork.99percentile", 42.0, 42),
-            ('glork.count', 6.0, 42),
-            ("glork.max", 42.0, 42),
-            ("glork.mean", 18.0, 42),
-            ("glork.min", 4.0, 42),
-            ('glork.rate', 3, 42),
-            ("glork.stddev", 13.490738, 42),
+            (b"glork.999percentile", 42.0, 42),
+            (b"glork.99percentile", 42.0, 42),
+            (b'glork.count', 6.0, 42),
+            (b"glork.max", 42.0, 42),
+            (b"glork.mean", 18.0, 42),
+            (b"glork.min", 4.0, 42),
+            (b'glork.rate', 3, 42),
+            (b"glork.stddev", 13.490738, 42),
             ]
         expected.sort()
 
@@ -151,7 +151,7 @@ class FlushMeterMetricMessagesTest(TestCase):
 
     def setUp(self):
         self.configurable_processor = ConfigurableMessageProcessor(
-            time_function=self.wall_clock_time, message_prefix="test.metric")
+            time_function=self.wall_clock_time, message_prefix=b"test.metric")
         self.time_now = int(time.time())
 
     def wall_clock_time(self):
@@ -166,11 +166,11 @@ class FlushMeterMetricMessagesTest(TestCase):
         Test the correct rendering of the Graphite report for
         a meter metric when a prefix is supplied.
         """
-        self.configurable_processor.process("gorets:3.0|m")
+        self.configurable_processor.process(b"gorets:3.0|m")
 
         self.time_now += 1
         messages = list(self.configurable_processor.flush())
-        self.assertEqual(("test.metric.gorets.count", 3.0, self.time_now),
+        self.assertEqual((b"test.metric.gorets.count", 3.0, self.time_now),
                          messages[0])
-        self.assertEqual(("test.metric.gorets.rate", 3.0, self.time_now),
+        self.assertEqual((b"test.metric.gorets.rate", 3.0, self.time_now),
                          messages[1])

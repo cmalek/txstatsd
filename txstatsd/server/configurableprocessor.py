@@ -42,15 +42,15 @@ class ConfigurableMessageProcessor(MessageProcessor):
       duration statistics, plus throughput statistics.
     """
 
-    def __init__(self, time_function=time.time, message_prefix="",
-                 internal_metrics_prefix="", plugins=None):
+    def __init__(self, time_function=time.time, message_prefix=b"",
+                 internal_metrics_prefix=b"", plugins=None):
         super(ConfigurableMessageProcessor, self).__init__(
             time_function=time_function, plugins=plugins)
 
         if not internal_metrics_prefix and not message_prefix:
-            internal_metrics_prefix = "statsd."
+            internal_metrics_prefix = b"statsd."
         elif message_prefix and not internal_metrics_prefix:
-            internal_metrics_prefix = message_prefix + "." + "statsd."
+            internal_metrics_prefix = message_prefix + b"." + b"statsd."
         self.internal_metrics_prefix = internal_metrics_prefix
         self.message_prefix = message_prefix
         self.gauge_metrics = {}
@@ -94,16 +94,16 @@ class ConfigurableMessageProcessor(MessageProcessor):
         self.meter_metrics[key].mark(value)
 
     def flush_counter_metrics(self, interval, timestamp):
-        for metric in self.counter_metrics.itervalues():
+        for metric in list(self.counter_metrics.values()):
             messages = metric.report(timestamp)
             yield messages
 
     def flush_gauge_metrics(self, timestamp):
-        for metric in self.gauge_metrics.itervalues():
+        for metric in list(self.gauge_metrics.values()):
             messages = metric.report(timestamp)
             yield messages
 
     def flush_timer_metrics(self, percent, timestamp):
-        for metric in self.timer_metrics.itervalues():
+        for metric in list(self.timer_metrics.values()):
             messages = metric.report(timestamp)
             yield messages

@@ -31,7 +31,7 @@ class LoggingMessageProcessor(ConfigurableMessageProcessor):
     """
 
     def __init__(self, logger, time_function=time.time,
-                 message_prefix="", plugins=None, **kwz):
+                 message_prefix=b"", plugins=None, **kwz):
         super(LoggingMessageProcessor, self).__init__(
             time_function=time_function, message_prefix=message_prefix,
             plugins=plugins, **kwz)

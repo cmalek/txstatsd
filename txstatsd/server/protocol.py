@@ -37,8 +37,9 @@ class StatsDServerProtocol(DatagramProtocol):
         self.monitor_message = monitor_message
         self.monitor_response = monitor_response
 
-    def datagramReceived(self, data, (host, port)):
+    def datagramReceived(self, data, connection):
         """Process received data and store it locally."""
+        (host, port) = connection
         if data == self.monitor_message:
             # Send the expected response to the
             # monitoring agent.

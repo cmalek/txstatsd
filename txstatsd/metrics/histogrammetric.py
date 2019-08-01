@@ -116,7 +116,7 @@ class HistogramMetricReporter(object):
             ".99percentile": percentiles[4],
             ".999percentile": percentiles[5]}
 
-        for item, value in items.itervalues():
+        for item, value in list(items.values()):
             metrics.append((self.prefix + self.name + item, value, timestamp))
         return metrics
 

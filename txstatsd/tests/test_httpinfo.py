@@ -86,9 +86,10 @@ class ServiceTestsBuilder(TestCase):
         s.startService()
         agent = Agent(reactor)
 
-        result = yield agent.request('GET',
-            'http://localhost:%s/%s' % (webport, path))
+        url = b'http://localhost:%d/%s' % (webport, path)
+        result = yield agent.request(b'GET', url)
         if result.code != 200:
+            print(f"result: {result}")
             raise HttpException(result)
         data = yield collect_response(result)
         defer.returnValue(data)
@@ -99,20 +100,20 @@ class ServiceTestsBuilder(TestCase):
 
     @defer.inlineCallbacks
     def test_httpinfo_metric_names(self):
-        data = yield self.get_results("list_metrics")
-        self.assertEquals(Dummy.metric_names, json.loads(data)["names"])
+        data = yield self.get_results(b"list_metrics")
+        self.assertEqual(Dummy.metric_names, json.loads(data)["names"])
 
     @defer.inlineCallbacks
     def test_httpinfo_ok(self):
-        data = yield self.get_results("status")
-        self.assertEquals(json.loads(data)["status"], "OK")
+        data = yield self.get_results(b"status")
+        self.assertEqual(json.loads(data)["status"], "OK")
 
     @defer.inlineCallbacks
     def test_httpinfo_error(self):
         try:
-            data = yield self.get_results("status", last_flush_duration=30)
+            data = yield self.get_results(b"status", last_flush_duration=30)
         except HttpException as e:
-            self.assertEquals(e.response.code, 500)
+            self.assertEqual(e.response.code, 500)
         else:
             self.fail("Not 500")
 
@@ -122,7 +123,7 @@ class ServiceTestsBuilder(TestCase):
             data = yield self.get_results("metrics/gorets",
                 timer_metrics={'gorets': 100})
         except HttpException as e:
-            self.assertEquals(e.response.code, 404)
+            self.assertEqual(e.response.code, 404)
         else:
             self.fail("Not 404")
 
@@ -132,7 +133,7 @@ class ServiceTestsBuilder(TestCase):
         tmr = TimerMetricReporter('gorets')
         data = yield self.get_results("metrics/gorets",
             timer_metrics={'gorets': tmr})
-        self.assertEquals(json.loads(data)["histogram"], [0.] * 10)
+        self.assertEqual(json.loads(data)["histogram"], [0.] * 10)
 
     @defer.inlineCallbacks
     def test_httpinfo_timer3(self):
@@ -141,18 +142,16 @@ class ServiceTestsBuilder(TestCase):
         tmr = TimerMetricReporter('gorets')
         for i in range(1, 1001):
             tmr.histogram.update(i)
-        data = yield self.get_results("metrics/gorets",
-            timer_metrics={'gorets': tmr})
+        data = yield self.get_results(b"metrics/gorets", timer_metrics={'gorets': tmr})
         hist = json.loads(data)
         self.assertTrue(isinstance(hist, dict))
-        self.assertEquals(sum(hist["histogram"]), 1000)
+        self.assertEqual(sum(hist["histogram"]), 1000)
 
     @defer.inlineCallbacks
     def test_httpinfo_fake_plugin(self):
         """Also works for plugins."""
 
         tmr = TimerMetricReporter('gorets')
-        data = yield self.get_results("metrics/gorets",
-            timer_metrics={}, plugin_metrics={'gorets': tmr})
+        data = yield self.get_results(b"metrics/gorets", timer_metrics={}, plugin_metrics={b'gorets': tmr})
         hist = json.loads(data)
         self.assertTrue(isinstance(hist, dict))

@@ -65,11 +65,11 @@ def parse_meminfo(data, prefix="sys.mem"):
 
 def parse_loadavg(data, prefix="sys.loadavg"):
     """Parse data from /proc/loadavg."""
-    return dict(zip(
+    return dict(list(zip(
         (prefix + ".oneminute",
          prefix + ".fiveminutes",
          prefix + ".fifthteenminutes"),
-        [float(x) for x in data.split()[:3]]))
+        [float(x) for x in data.split()[:3]])))
 
 
 def parse_netdev(data, prefix="sys.net"):
@@ -87,7 +87,7 @@ def parse_netdev(data, prefix="sys.net"):
             continue
         device, data = line.split(":")
         device = device.strip()
-        data = dict(zip(columns, map(int, data.split())))
+        data = dict(list(zip(columns, list(map(int, data.split())))))
         result.update({
             "%s.%s.bytes.received" % (prefix, device): data["recv_bytes"],
             "%s.%s.bytes.sent" % (prefix, device): data["send_bytes"],
@@ -110,19 +110,19 @@ class ProcessReport(object):
 
     def get_memory_and_cpu(self, prefix="proc"):
         """Report memory and CPU stats for C{process}."""
-        vsize, rss = self.process.get_memory_info()
-        result = {prefix + ".cpu.percent": self.process.get_cpu_percent(),
+        vsize, rss = self.process.memory_info()
+        result = {prefix + ".cpu.percent": self.process.cpu_percent(),
                   prefix + ".memory.percent":
-                    self.process.get_memory_percent(),
+                    self.process.memory_percent(),
                   prefix + ".memory.vsize": vsize,
                   prefix + ".memory.rss": rss}
-        if getattr(self.process, "get_num_threads", None) is not None:
-            result[prefix + ".threads"] = self.process.get_num_threads()
+        if getattr(self.process, "num_threads", None) is not None:
+            result[prefix + ".threads"] = self.process.num_threads()
         return result
 
     def get_cpu_counters(self, prefix="proc"):
         """Report memory and CPU counters for C{process}."""
-        utime, stime = self.process.get_cpu_times()
+        utime, stime = self.process.cpu_times()
         result = {prefix + ".cpu.user": utime,
                   prefix + ".cpu.system": stime}
         return result
@@ -130,9 +130,9 @@ class ProcessReport(object):
     def get_io_counters(self, prefix="proc.io"):
         """Report IO statistics for C{process}."""
         result = {}
-        if getattr(self.process, "get_io_counters", None) is not None:
+        if getattr(self.process, "io_counters", None) is not None:
             (read_count, write_count,
-             read_bytes, write_bytes) = self.process.get_io_counters()
+             read_bytes, write_bytes) = self.process.io_counters()
             result.update({
                 prefix + ".read.count": read_count,
                 prefix + ".write.count": write_count,
@@ -143,8 +143,8 @@ class ProcessReport(object):
     def get_net_stats(self, prefix="proc.net"):
         """Report active connection statistics for C{process}."""
         result = {}
-        if getattr(self.process, "get_connections", None) is not None:
-            for connection in self.process.get_connections():
+        if getattr(self.process, "connections", None) is not None:
+            for connection in self.process.connections():
                 fd, family, _type, laddr, raddr, status = connection
                 if _type == socket.SOCK_STREAM:
                     key = prefix + ".status.%s" % status.lower()
@@ -168,13 +168,13 @@ def report_counters(report_function, *args, **kwargs):
             if last_value is None:
                 last_value = new_value
             else:
-                for key, value in new_value.iteritems():
+                for key, value in list(new_value.items()):
                     result[key] = value - last_value[key]
                 last_value = new_value
             yield result
     generator = generate()
     def report():
-        return generator.next()
+        return next(generator)
     update_wrapper(report, report_function)
     return report
 
@@ -190,11 +190,11 @@ def report_system_stats(prefix="sys", percpu=False):
     cpu_times = psutil.cpu_times(percpu=percpu)
     system_stats = {}
     if not percpu:
-        for mode, time in cpu_times._asdict().iteritems():
+        for mode, time in list(cpu_times._asdict().items()):
             system_stats[prefix + ".cpu." + mode] = time
     else:
         for idx, cpu_time in enumerate(cpu_times):
-            for mode, time in cpu_time._asdict().iteritems():
+            for mode, time in list(cpu_time._asdict().items()):
                 system_stats[prefix + ".cpu.%03d." % idx + mode] = time
     return system_stats
 

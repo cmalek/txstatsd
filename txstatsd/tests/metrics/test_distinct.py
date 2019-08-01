@@ -18,7 +18,7 @@
 # CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-from __future__ import print_function
+
 
 import random
 
@@ -39,7 +39,7 @@ class TestHash(TestCase):
             random.seed(1)
             h = distinct.hash(chr(c))
             results.add(h)
-        self.assertEquals(len(results), 256)
+        self.assertEqual(len(results), 256)
 
     def test_chi_square(self):
         try:
@@ -62,7 +62,7 @@ class TestHash(TestCase):
             value = sum(((x - N / buckets) ** 2) / (N / buckets) for x in bins)
             pval = chi2.cdf(value, N)
             if pval > 0.5:
-                print(bins, pval)
+                print((bins, pval))
             self.assertTrue(pval < 0.5, "bits %s, pval == %s" % (bits, pval))
     test_chi_square.skip = "Takes too long to run every time."
 
@@ -70,12 +70,12 @@ class TestHash(TestCase):
 class TestZeros(TestCase):
 
     def test_zeros(self):
-        self.assertEquals(distinct.zeros(1), 0)
-        self.assertEquals(distinct.zeros(2), 1)
-        self.assertEquals(distinct.zeros(4), 2)
-        self.assertEquals(distinct.zeros(5), 0)
-        self.assertEquals(distinct.zeros(8), 3)
-        self.assertEquals(distinct.zeros(9), 0)
+        self.assertEqual(distinct.zeros(1), 0)
+        self.assertEqual(distinct.zeros(2), 1)
+        self.assertEqual(distinct.zeros(4), 2)
+        self.assertEqual(distinct.zeros(5), 0)
+        self.assertEqual(distinct.zeros(8), 3)
+        self.assertEqual(distinct.zeros(9), 0)
 
 
 class TestDistinct(TestCase):

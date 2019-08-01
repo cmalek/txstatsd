@@ -52,7 +52,7 @@ class TestReportingService(TestCase):
         self.assertEqual(1, len(service.tasks))
         service.startService()
         clock.advance(1)
-        self.assertEquals([("foo", 1)], called)
+        self.assertEqual([("foo", 1)], called)
 
     def test_schedule_without_report_function(self):
         """Scheduling without a report function calls original function."""
@@ -67,7 +67,7 @@ class TestReportingService(TestCase):
         self.assertEqual(1, len(service.tasks))
         service.startService()
         clock.advance(1)
-        self.assertEquals([("foo", 1)], called)
+        self.assertEqual([("foo", 1)], called)
 
     def test_schedule_when_running(self):
         """Schedule after service is running runs the task immediately."""
@@ -81,7 +81,7 @@ class TestReportingService(TestCase):
 
         service.schedule(foo, 1, None)
         self.assertEqual(1, len(service.tasks))
-        self.assertEquals([("foo", 1)], called)
+        self.assertEqual([("foo", 1)], called)
 
     def test_report_with_instance_name(self):
         """
@@ -102,4 +102,4 @@ class TestReportingService(TestCase):
         self.assertEqual(1, len(service.tasks))
         service.startService()
         clock.advance(1)
-        self.assertEquals([("instance-1.foo", 1)], called)
+        self.assertEqual([("instance-1.foo", 1)], called)

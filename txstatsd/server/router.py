@@ -49,7 +49,7 @@ import re
 import time
 import fnmatch
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.application.internet import UDPServer
 from twisted.application.service import Service
@@ -110,11 +110,11 @@ class TCPRedirectClientFactory(ReconnectingClientFactory):
             self.protocol.write(data)
 
 
+@implementer(interfaces.IPushProducer)
 class TCPRedirectProtocol(Protocol):
     """A client protocol for redicting messages over tcp.
     """
 
-    implements(interfaces.IPushProducer)
 
     def __init__(self):
         self.paused = False
@@ -150,11 +150,11 @@ class TCPRedirectProtocol(Protocol):
             self.dropped += 1
             return
 
-        if line[-2:] != "\r\n":
-            if line[-1] == "\r":
-                line += "\n"
+        if line[-2:] != b"\r\n":
+            if line[-1] == b"\r":
+                line += b"\n"
             else:
-                line += "\r\n"
+                line += b"\r\n"
         self.transport.write(line)
 
 
@@ -229,7 +229,7 @@ class Router(BaseMessageProcessor):
 
     def build_condition_path_like(self, pattern):
         def path_like_condition(metric_type, key, fields):
-            return fnmatch.fnmatch(key, pattern)
+            return fnmatch.fnmatch(key, pattern.encode('utf-8'))
         return path_like_condition
 
     def build_target_drop(self):
@@ -239,12 +239,12 @@ class Router(BaseMessageProcessor):
         return drop
 
     def build_target_rewrite(self, pattern, repl, dup="no-dup"):
-        rexp = re.compile(pattern)
+        rexp = re.compile(pattern.encode('utf-8'))
 
         def rewrite_target(metric_type, key, fields):
             if dup == "dup" and rexp.match(key) is not None:
                 yield metric_type, key, fields
-            key = rexp.sub(repl, key)
+            key = rexp.sub(repl.encode('utf-8'), key)
             yield metric_type, key, fields
 
         return rewrite_target

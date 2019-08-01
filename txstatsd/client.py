@@ -111,7 +111,7 @@ class ConsistentHashingClient(object):
 
     def write(self, data):
         """Hash based on the metric name, then send to the right client."""
-        metric_name, rest = str(data).split(":", 1)
+        metric_name, rest = data.decode('utf-8').split(":", 1)
         client = self.ring.get_node(metric_name)
         client.write(data)
 

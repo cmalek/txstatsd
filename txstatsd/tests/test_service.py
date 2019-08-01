@@ -21,8 +21,8 @@
 
 import tempfile
 try:
-    import ConfigParser
-    from StringIO import StringIO
+    import configparser
+    from io import StringIO
 except ImportError:
     import configparser as ConfigParser
     from io import StringIO
@@ -52,7 +52,7 @@ class GlueOptionsTestCase(TestCase):
 
         o = TestOptions()
         o.parseOptions([])
-        self.assertEquals("default", o["test"])
+        self.assertEqual("default", o["test"])
 
     def test_set_parameter(self):
         """
@@ -63,7 +63,7 @@ class GlueOptionsTestCase(TestCase):
 
         o = TestOptions()
         o.parseOptions(["--test", "notdefault"])
-        self.assertEquals("notdefault", o["test"])
+        self.assertEqual("notdefault", o["test"])
 
     def test_no_config_option(self):
         """
@@ -82,12 +82,12 @@ class GlueOptionsTestCase(TestCase):
             glue_parameters_config = [["test", "t", "default", "help"]]
         f = tempfile.NamedTemporaryFile()
 
-        config = ConfigParser.RawConfigParser()
+        config = configparser.RawConfigParser()
         config.add_section('statsd')
         if not kwargs:
             config.set('statsd', 'test', 'configvalue')
         else:
-            for k, v in kwargs.items():
+            for k, v in list(kwargs.items()):
                 config.set('statsd', k, v)
         config.write(f)
         f.flush()
@@ -107,7 +107,7 @@ class GlueOptionsTestCase(TestCase):
         """
         f, o = self.get_file_parser()
         o.parseOptions(["--config", f.name])
-        self.assertEquals("configvalue", o["test"])
+        self.assertEqual("configvalue", o["test"])
 
     def test_cmdline_overrides_config(self):
         """
@@ -115,7 +115,7 @@ class GlueOptionsTestCase(TestCase):
         """
         f, o = self.get_file_parser()
         o.parseOptions(["--config", f.name, "--test", "cmdline"])
-        self.assertEquals("cmdline", o["test"])
+        self.assertEqual("cmdline", o["test"])
 
     def test_ensure_config_values_coerced(self):
         """
@@ -124,7 +124,7 @@ class GlueOptionsTestCase(TestCase):
         f, o = self.get_file_parser([["number", "n", 5, "help", int]],
             number=10)
         o.parseOptions(["--config", f.name])
-        self.assertEquals(10, o["number"])
+        self.assertEqual(10, o["number"])
 
     def test_support_default_not_in_config(self):
         """
@@ -132,7 +132,7 @@ class GlueOptionsTestCase(TestCase):
         """
         f, o = self.get_file_parser([["number", "n", 5, "help", int]])
         o.parseOptions(["--config", f.name])
-        self.assertEquals(5, o["number"])
+        self.assertEqual(5, o["number"])
 
     def test_support_plugin_sections(self):
         class TestOptions(service.OptionsGlue):
@@ -140,10 +140,10 @@ class GlueOptionsTestCase(TestCase):
             config_section = "statsd"
 
         o = TestOptions()
-        config_file = ConfigParser.RawConfigParser()
+        config_file = configparser.RawConfigParser()
         config_file.readfp(StringIO("[statsd]\n\n[plugin_test]\nfoo = bar\n"))
         o.configure(config_file)
-        self.assertEquals(o["plugin_test"], config_file.items("plugin_test"))
+        self.assertEqual(o["plugin_test"], config_file.items("plugin_test"))
 
 
 class StatsDOptionsTestCase(TestCase):
@@ -154,7 +154,7 @@ class StatsDOptionsTestCase(TestCase):
         backend options had been specified in the command line.
         """
         o = service.StatsDOptions()
-        config_file = ConfigParser.RawConfigParser()
+        config_file = configparser.RawConfigParser()
         config_file.readfp(StringIO("\n".join([
             "[statsd]",
             "[carbon-cache-a]",
@@ -171,11 +171,11 @@ class StatsDOptionsTestCase(TestCase):
             "carbon-cache-name = c",
             ])))
         o.configure(config_file)
-        self.assertEquals(o["carbon-cache-host"],
+        self.assertEqual(o["carbon-cache-host"],
                           ["127.0.0.1", "127.0.0.2", "127.0.0.3"])
-        self.assertEquals(o["carbon-cache-port"],
+        self.assertEqual(o["carbon-cache-port"],
                           [2004, 2005, 2006])
-        self.assertEquals(o["carbon-cache-name"],
+        self.assertEqual(o["carbon-cache-name"],
                           ["a", "b", "c"])
 
 
@@ -193,10 +193,10 @@ class ClientManagerStatsTestCase(TestCase):
         stats["bar"] = 1
         stats["destinations.bahamas"] = 2
         stats["destinations.hawaii"] = 3
-        self.assertEquals({"destinations.bahamas": 2,
+        self.assertEqual({"destinations.bahamas": 2,
                            "destinations.hawaii": 3},
                           service.report_client_manager_stats())
-        self.assertEquals({"foo": 0,
+        self.assertEqual({"foo": 0,
                            "bar": 0,
                            "destinations.bahamas": 0,
                            "destinations.hawaii": 0}, stats)

@@ -30,7 +30,7 @@ import random
 import time
 import sys
 
-from zope.interface import implementer, implements
+from zope.interface import implementer
 
 from txstatsd.metrics.metric import Metric
 from txstatsd.itxstatsd import IMetric
@@ -51,7 +51,7 @@ class SBoxHash(object):
     def hash(self, data):
         value = 0
         for c in data:
-            value = value ^ self.table[ord(c)]
+            value = value ^ self.table[c]
             value = value * 3
             value = value & 0xFFFFFFFF
         return value
@@ -116,16 +116,14 @@ class DistinctMetric(Metric):
         """Report this item was seen."""
         self.send("%s|d" % item)
 
-
+@implementer(IMetric)
 class DistinctMetricReporter(object):
     """
     Keeps an estimate of the distinct numbers of items seen on various
     sliding windows of time.
     """
-    if sys.version_info[0:2] == (2,6):
-        implements(IMetric)
 
-    def __init__(self, name, wall_time_func=time.time, prefix=""):
+    def __init__(self, name, wall_time_func=time.time, prefix=b""):
         """Construct a metric we expect to be periodically updated.
 
         @param name: Indicates what is being instrumented.
@@ -137,7 +135,7 @@ class DistinctMetricReporter(object):
         self.wall_time_func = wall_time_func
         self.counter = SlidingDistinctCounter(32, 32)
         if prefix:
-            prefix += "."
+            prefix += b"."
         self.prefix = prefix
 
     def count(self):
@@ -161,14 +159,10 @@ class DistinctMetricReporter(object):
     def flush(self, interval, timestamp):
         now = self.wall_time_func()
         metrics = []
-        items = {".count": self.count(),
-                 ".count_1min": self.count_1min(now),
-                 ".count_1hour": self.count_1hour(now),
-                 ".count_1day": self.count_1day(now)}
-        for item, value in sorted(items.iteritems()):
+        items = {b".count": self.count(),
+                 b".count_1min": self.count_1min(now),
+                 b".count_1hour": self.count_1hour(now),
+                 b".count_1day": self.count_1day(now)}
+        for item, value in sorted(items.items()):
             metrics.append((self.prefix + self.name + item, value, timestamp))
         return metrics
-
-# if we are running anything >= 2.7
-if sys.version_info[0:2] >= (2,7):
-    DistinctMetricReporter = implementer(IMetric)(DistinctMetricReporter)

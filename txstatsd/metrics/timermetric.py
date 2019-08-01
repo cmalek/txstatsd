@@ -55,7 +55,7 @@ class TimerMetricReporter(object):
     statistics, plus throughput statistics via L{MeterMetricReporter}.
     """
 
-    def __init__(self, name, wall_time_func=time.time, prefix=""):
+    def __init__(self, name, wall_time_func=time.time, prefix=b""):
         """Construct a metric we expect to be periodically updated.
 
         @param name: Indicates what is being instrumented.
@@ -67,7 +67,7 @@ class TimerMetricReporter(object):
         self.wall_time_func = wall_time_func
 
         if prefix:
-            prefix += "."
+            prefix += b"."
         self.prefix = prefix
 
         sample = UniformSample(1028)
@@ -137,16 +137,16 @@ class TimerMetricReporter(object):
         # median, 75, 95, 98, 99, 99.9 percentile
         percentiles = self.percentiles(0.5, 0.75, 0.95, 0.98, 0.99, 0.999)
         metrics = []
-        items = {".min": self.min(),
-                 ".max": self.max(),
-                 ".mean": self.mean(),
-                 ".stddev": self.std_dev(),
-                 ".99percentile": percentiles[4],
-                 ".999percentile": percentiles[5],
-                 ".count": self.count,
-                 ".rate": self.rate(timestamp),
+        items = {b".min": self.min(),
+                 b".max": self.max(),
+                 b".mean": self.mean(),
+                 b".stddev": self.std_dev(),
+                 b".99percentile": percentiles[4],
+                 b".999percentile": percentiles[5],
+                 b".count": self.count,
+                 b".rate": self.rate(timestamp),
                  }
-        for item, value in sorted(items.iteritems()):
+        for item, value in sorted(items.items()):
             metrics.append((self.prefix + self.name + item,
                             round(value, 6), timestamp))
         self.clear(timestamp)

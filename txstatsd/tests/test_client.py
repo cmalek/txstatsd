@@ -37,6 +37,7 @@ from txstatsd.client import (
     ConsistentHashingClient
 )
 from txstatsd.protocol import DataQueue, TransportGateway
+import imp
 
 
 class FakeClient(object):
@@ -86,7 +87,7 @@ class TestClient(TestCase):
             self.assertEqual(bytes_sent, len('message'))
 
         def exercise(callback):
-            self.client.write('message', callback=callback)
+            self.client.write(b'message', callback=callback)
 
         d = Deferred()
         d.addCallback(ensure_bytes_sent)
@@ -95,8 +96,7 @@ class TestClient(TestCase):
 
     @inlineCallbacks
     def test_twistedstatsd_write_with_host_resolved(self):
-        self.client = TwistedStatsDClient.create(
-            'localhost', 8000)
+        self.client = TwistedStatsDClient.create(b'localhost', 8000)
         self.build_protocol()
         yield self.client.resolve_later
 
@@ -105,7 +105,7 @@ class TestClient(TestCase):
             self.assertEqual(self.client.host, '127.0.0.1')
 
         def exercise(callback):
-            self.client.write('message', callback=callback)
+            self.client.write(b'message', callback=callback)
 
         d = Deferred()
         d.addCallback(ensure_bytes_sent)
@@ -140,8 +140,7 @@ class TestClient(TestCase):
 
         self.patch(log, "err", capture_exception_raised)
 
-        self.client = TwistedStatsDClient.create(
-            '256.0.0.0', 1)
+        self.client = TwistedStatsDClient.create('256.0.0.0', 1)
         self.build_protocol()
         yield self.client.resolve_later
 
@@ -154,12 +153,9 @@ class TestClient(TestCase):
         self.assertEqual(client.host, None)
 
     def test_udpstatsd_malformed_address(self):
-        self.assertRaises(ValueError,
-                          UdpStatsDClient, 'localhost', -1)
-        self.assertRaises(ValueError,
-                          UdpStatsDClient, 'localhost', 'malformed')
-        self.assertRaises(ValueError,
-                          UdpStatsDClient, 0, 8000)
+        self.assertRaises(ValueError, UdpStatsDClient, 'localhost', -1)
+        self.assertRaises(ValueError, UdpStatsDClient, 'localhost', 'malformed')
+        self.assertRaises(ValueError, UdpStatsDClient, 0, 8000)
 
     def test_udpstatsd_socket_nonblocking(self):
         client = UdpStatsDClient('localhost', 8000)
@@ -170,23 +166,23 @@ class TestClient(TestCase):
 
     def test_udp_client_can_be_imported_without_twisted(self):
         """Ensure that the twisted-less client can be used without twisted."""
-        unloaded = [(name, mod) for (name, mod) in sys.modules.items()
+        unloaded = [(name, mod) for (name, mod) in list(sys.modules.items())
                     if 'twisted' in name]
         def restore_modules():
             for name, mod in unloaded:
                 sys.modules[name] = mod
-            reload(txstatsd.client)
-            reload(txstatsd.metrics.metrics)
-            reload(txstatsd.metrics.metric)
+            imp.reload(txstatsd.client)
+            imp.reload(txstatsd.metrics.metrics)
+            imp.reload(txstatsd.metrics.metric)
         self.addCleanup(restore_modules)
 
         # Mark everything twistedish as unavailable
         for name, mod in unloaded:
             sys.modules[name] = None
 
-        reload(txstatsd.client)
-        reload(txstatsd.metrics.metrics)
-        reload(txstatsd.metrics.metric)
+        imp.reload(txstatsd.client)
+        imp.reload(txstatsd.metrics.metrics)
+        imp.reload(txstatsd.metrics.metric)
         for mod in sys.modules:
             if 'twisted' in mod:
                 self.assertTrue(sys.modules[mod] is None)
@@ -391,15 +387,16 @@ class TestConsistentHashingClient(TestCase):
         bar.send("1")
         foo.send("1")
         dba.send("1")
-        self.assertEqual(clients[0].data, ["bar:1",
-                                           "foo:1",
-                                           "dba:1"])
+        self.assertEqual(
+            clients[0].data,
+            [b"bar:1", b"foo:1", b"dba:1"]
+        )
 
     def test_hash_with_two_clients(self):
         clients = [
             FakeClient("127.0.0.1", 10001),
-            FakeClient("127.0.0.1", 10002),
-            ]
+            FakeClient("127.0.0.1", 10002)
+        ]
         client = ConsistentHashingClient(clients)
         bar = Metric(client, "bar")
         foo = Metric(client, "foo")
@@ -407,16 +404,15 @@ class TestConsistentHashingClient(TestCase):
         bar.send("1")
         foo.send("1")
         dba.send("1")
-        self.assertEqual(clients[0].data, ["bar:1",
-                                           "dba:1"])
-        self.assertEqual(clients[1].data, ["foo:1"])
+        self.assertEqual(clients[0].data, [b"bar:1", b"dba:1"])
+        self.assertEqual(clients[1].data, [b"foo:1"])
 
     def test_hash_with_three_clients(self):
         clients = [
             FakeClient("127.0.0.1", 10001),
             FakeClient("127.0.0.1", 10002),
-            FakeClient("127.0.0.1", 10003),
-            ]
+            FakeClient("127.0.0.1", 10003)
+        ]
         client = ConsistentHashingClient(clients)
         bar = Metric(client, "bar")
         foo = Metric(client, "foo")
@@ -424,9 +420,9 @@ class TestConsistentHashingClient(TestCase):
         bar.send("1")
         foo.send("1")
         dba.send("1")
-        self.assertEqual(clients[0].data, ["bar:1"])
-        self.assertEqual(clients[1].data, ["foo:1"])
-        self.assertEqual(clients[2].data, ["dba:1"])
+        self.assertEqual(clients[0].data, [b"bar:1"])
+        self.assertEqual(clients[1].data, [b"foo:1"])
+        self.assertEqual(clients[2].data, [b"dba:1"])
 
     def test_connect_with_two_clients(self):
         clients = [

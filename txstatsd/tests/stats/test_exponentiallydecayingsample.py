@@ -79,7 +79,7 @@ class TestExponentiallyDecayingSample(TestCase):
         sample = ExponentiallyDecayingSample(100, 0.99, wall_time=wtime)
         sample.RESCALE_THRESHOLD = 100
         sample.clear()
-        for i in xrange(10000000):
+        for i in range(10000000):
             sample.update(random.normalvariate(0, 10))
             _time[0] += 1
 
@@ -96,7 +96,7 @@ class TestExponentiallyDecayingSample(TestCase):
             return _time[0]
 
         sample = ExponentiallyDecayingSample(100, 0.99, wall_time=wtime)
-        for i in xrange(100):
+        for i in range(100):
             sample.update(random.normalvariate(0, 10))
             _time[0] += 10000
 

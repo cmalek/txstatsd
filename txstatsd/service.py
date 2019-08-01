@@ -22,7 +22,7 @@
 import getopt
 import sys
 import time
-import ConfigParser
+import configparser
 import platform
 import functools
 
@@ -92,7 +92,7 @@ class OptionsGlue(usage.Options):
         try:
             opts, args = getopt.getopt(options,
                                        self.shortOpt, self.longOpt)
-        except getopt.error, e:
+        except getopt.error as e:
             raise usage.UsageError(str(e))
 
         for opt, arg in opts:
@@ -107,7 +107,7 @@ class OptionsGlue(usage.Options):
     def postOptions(self):
         """Read the configuration file if one is provided."""
         if self['config'] is not None:
-            config_file = ConfigParser.RawConfigParser()
+            config_file = configparser.RawConfigParser()
             config_file.read(self['config'])
 
             self.configure(config_file)
@@ -294,7 +294,7 @@ def createService(options):
     else:
         processor = (processor or ConfigurableMessageProcessor)(
             message_prefix=prefix,
-            internal_metrics_prefix=prefix + "." + instance_name + ".",
+            internal_metrics_prefix=prefix + b"." + instance_name + b".",
             plugins=plugin_metrics)
         input_router = Router(processor, options['routing'], root_service)
         connection = InternalClient(input_router)

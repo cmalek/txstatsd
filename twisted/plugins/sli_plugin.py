@@ -23,7 +23,7 @@
 import fnmatch
 import re
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.plugin import IPlugin
 from txstatsd.itxstatsd import IMetricFactory
@@ -31,8 +31,8 @@ from txstatsd.metrics.slimetric import (
     SLIMetricReporter, BetweenCondition, AboveCondition, BelowCondition)
 
 
+@implementer(IMetricFactory, IPlugin)
 class SLIMetricFactory(object):
-    implements(IMetricFactory, IPlugin)
 
     name = "SLI"
     metric_type = "sli"
@@ -48,7 +48,7 @@ class SLIMetricFactory(object):
         else:
             path = name
         result = {}
-        for pattern, conditions in self.config.items():
+        for pattern, conditions in list(self.config.items()):
             if fnmatch.fnmatch(path, pattern):
                 result.update(conditions)
         return SLIMetricReporter(path, result)

@@ -29,10 +29,10 @@ from twisted.python import log
 from txstatsd.metrics.metermetric import MeterMetricReporter
 
 
-SPACES = re.compile("\s+")
-SLASHES = re.compile("\/+")
-NON_ALNUM = re.compile("[^a-zA-Z_\-0-9\.]")
-RATE = re.compile("^@([\d\.]+)")
+SPACES = re.compile(b"\s+")
+SLASHES = re.compile(b"\/+")
+NON_ALNUM = re.compile(b"[^a-zA-Z_\-0-9\.]")
+RATE = re.compile(b"^@([\d\.]+)")
 
 
 def normalize_key(key):
@@ -51,14 +51,14 @@ class BaseMessageProcessor(object):
     def process(self, message):
         """
         """
-        if not ":" in message:
+        if b":" not in message:
             return self.fail(message)
 
-        key, data = message.strip().split(":", 1)
-        if not "|" in data:
+        key, data = message.strip().split(b":", 1)
+        if b"|" not in data:
             return self.fail(message)
 
-        fields = data.split("|")
+        fields = data.split(b"|")
         if len(fields) < 2 or len(fields) > 3:
             return self.fail(message)
 
@@ -67,7 +67,7 @@ class BaseMessageProcessor(object):
         return self.process_message(message, metric_type, key, fields)
 
     def rebuild_message(self, metric_type, key, fields):
-        return key + ":" + "|".join(fields)
+        return key + b":" + b"|".join(fields)
 
     def fail(self, message):
         """Log and discard malformed message."""
@@ -86,11 +86,11 @@ class MessageProcessor(BaseMessageProcessor):
     def __init__(self, time_function=time.time, plugins=None):
         self.time_function = time_function
 
-        self.stats_prefix = "stats."
-        self.internal_metrics_prefix = "statsd."
-        self.count_prefix = "stats_counts."
-        self.timer_prefix = self.stats_prefix + "timers."
-        self.gauge_prefix = self.stats_prefix + "gauge."
+        self.stats_prefix = b"stats."
+        self.internal_metrics_prefix = b"statsd."
+        self.count_prefix = b"stats_counts."
+        self.timer_prefix = self.stats_prefix + b"timers."
+        self.gauge_prefix = self.stats_prefix + b"gauge."
 
         self.process_timings = {}
         self.by_type = {}
@@ -112,11 +112,11 @@ class MessageProcessor(BaseMessageProcessor):
     def get_metric_names(self):
         """Return the names of all seen metrics."""
         metrics = set()
-        metrics.update(self.timer_metrics.keys())
-        metrics.update(self.counter_metrics.keys())
+        metrics.update(list(self.timer_metrics.keys()))
+        metrics.update(list(self.counter_metrics.keys()))
         metrics.update(v for k, v in self.gauge_metrics)
-        metrics.update(self.meter_metrics.keys())
-        metrics.update(self.plugin_metrics.keys())
+        metrics.update(list(self.meter_metrics.keys()))
+        metrics.update(list(self.plugin_metrics.keys()))
         return list(metrics)
 
     def process_message(self, message, metric_type, key, fields):
@@ -125,13 +125,13 @@ class MessageProcessor(BaseMessageProcessor):
         or C{gauge_metrics} depending on which kind of message it is.
         """
         start = self.time_function()
-        if metric_type == "c":
+        if metric_type == b"c":
             self.process_counter_metric(key, fields, message)
-        elif metric_type == "ms":
+        elif metric_type == b"ms":
             self.process_timer_metric(key, fields[0], message)
-        elif metric_type == "g":
+        elif metric_type == b"g":
             self.process_gauge_metric(key, fields[0], message)
-        elif metric_type == "m":
+        elif metric_type == b"m":
             self.process_meter_metric(key, fields[0], message)
         elif metric_type in self.plugins:
             self.process_plugin_metric(metric_type, key, fields, message)
@@ -143,7 +143,7 @@ class MessageProcessor(BaseMessageProcessor):
         self.by_type[metric_type] += 1
 
     def get_message_prefix(self, kind):
-        return "stats." + kind
+        return b"stats." + kind
 
     def process_plugin_metric(self, metric_type, key, items, message):
         if not key in self.plugin_metrics:
@@ -187,7 +187,7 @@ class MessageProcessor(BaseMessageProcessor):
         self.counter_metrics[key] += value * (1 / float(rate))
 
     def process_gauge_metric(self, key, composite, message):
-        values = composite.split(":")
+        values = composite.split(b":")
         if not len(values) == 1:
             return self.fail(message)
 
@@ -203,7 +203,8 @@ class MessageProcessor(BaseMessageProcessor):
         self.gauge_metrics.append(metric)
 
     def process_meter_metric(self, key, composite, message):
-        values = composite.split(":")
+        print(composite)
+        values = composite.split(b":")
         if not len(values) == 1:
             return self.fail(message)
 
@@ -217,7 +218,7 @@ class MessageProcessor(BaseMessageProcessor):
     def compose_meter_metric(self, key, value):
         if not key in self.meter_metrics:
             metric = MeterMetricReporter(key, self.time_function,
-                                         prefix="stats.meter")
+                                         prefix=b"stats.meter")
             self.meter_metrics[key] = metric
         self.meter_metrics[key].mark(value)
 
@@ -287,16 +288,16 @@ class MessageProcessor(BaseMessageProcessor):
                 yield metric
 
     def flush_counter_metrics(self, interval, timestamp):
-        for key, count in self.counter_metrics.iteritems():
+        for key, count in list(self.counter_metrics.items()):
             self.counter_metrics[key] = 0
 
-            value = count / interval
+            value = int(count / interval)
             yield ((self.stats_prefix + key, value, timestamp),
                    (self.count_prefix + key, count, timestamp))
 
     def flush_timer_metrics(self, percent, timestamp):
         threshold_value = ((100 - percent) / 100.0)
-        for key, timers in self.timer_metrics.iteritems():
+        for key, timers in list(self.timer_metrics.items()):
             count = len(timers)
             if count > 0:
                 self.timer_metrics[key] = []
@@ -313,56 +314,58 @@ class MessageProcessor(BaseMessageProcessor):
                     index = count - int(round(threshold_value * count))
                     timers = timers[:index]
                     threshold_upper = timers[-1]
-                    mean = sum(timers) / index
+                    mean = int(sum(timers) / index)
 
-                items = {".mean": mean,
-                         ".upper": upper,
-                         ".upper_%s" % percent: threshold_upper,
-                         ".lower": lower,
-                         ".count": count}
+                items = {b".mean": mean,
+                         b".upper": upper,
+                         b".upper_%d" % percent: threshold_upper,
+                         b".lower": lower,
+                         b".count": count}
                 yield sorted((self.timer_prefix + key + item, value, timestamp)
-                             for item, value in items.iteritems())
+                             for item, value in list(items.items()))
 
     def flush_gauge_metrics(self, timestamp):
         for metric in self.gauge_metrics:
             value = metric[0]
             key = metric[1]
 
-            yield ((self.gauge_prefix + key + ".value", value, timestamp),)
+            yield ((self.gauge_prefix + key + b".value", value, timestamp),)
 
     def flush_meter_metrics(self, timestamp):
-        for metric in self.meter_metrics.itervalues():
+        for metric in list(self.meter_metrics.values()):
             messages = metric.report(timestamp)
             yield messages
 
     def flush_plugin_metrics(self, interval, timestamp):
-        for metric in self.plugin_metrics.itervalues():
+        for metric in list(self.plugin_metrics.values()):
             messages = metric.flush(interval, timestamp)
             yield messages
 
     def flush_metrics_summary(self, num_stats, per_metric, timestamp):
-        yield ((self.internal_metrics_prefix + "numStats",
+        yield ((self.internal_metrics_prefix + b"numStats",
                 num_stats, timestamp),)
 
         self.last_flush_duration = 0
-        for name, (value, duration) in per_metric.iteritems():
+        for name, (value, duration) in list(per_metric.items()):
+            if type(name) != bytes:
+                name = name.encode('utf-8')
             yield ((self.internal_metrics_prefix +
-                    "flush.%s.count" % name,
+                    b"flush.%s.count" % name,
                     value, timestamp),
                    (self.internal_metrics_prefix +
-                    "flush.%s.duration" % name,
+                    b"flush.%s.duration" % name,
                     duration * 1000, timestamp))
             log.msg("Flushed %d %s metrics in %.6f" %
                     (value, name, duration))
             self.last_flush_duration += duration
 
         self.last_process_duration = 0
-        for metric_type, duration in self.process_timings.iteritems():
+        for metric_type, duration in list(self.process_timings.items()):
             yield ((self.internal_metrics_prefix +
-                    "receive.%s.count" %
+                    b"receive.%s.count" %
                     metric_type, self.by_type[metric_type], timestamp),
                    (self.internal_metrics_prefix +
-                    "receive.%s.duration" %
+                    b"receive.%s.duration" %
                     metric_type, duration * 1000, timestamp))
             log.msg("Processing %d %s metrics took %.6f" %
                     (self.by_type[metric_type], metric_type, duration))

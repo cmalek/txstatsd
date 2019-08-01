@@ -32,7 +32,7 @@ class TestDeriveMetricReporter(TestCase):
         reporter = MeterMetricReporter(
             "test", wall_time_func=lambda: wall_time)
 
-        self.assertEquals([], reporter.report(wall_time))
+        self.assertEqual([], reporter.report(wall_time))
 
     def test_interface(self):
         random.seed(1)
@@ -49,6 +49,6 @@ class TestDeriveMetricReporter(TestCase):
         self.assertEqual(2, len(reported))
         self.assertEqual(140, reported[0][1])
         self.assertEqual(14, reported[1][1])
-        self.assertEquals(
+        self.assertEqual(
             ['some.prefix.test.count', 'some.prefix.test.rate'],
             [reported[0][0], reported[1][0]])

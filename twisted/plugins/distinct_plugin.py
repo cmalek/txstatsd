@@ -19,22 +19,25 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-from zope.interface import implements
+from zope.interface import implementer
 
 from twisted.plugin import IPlugin
 from txstatsd.itxstatsd import IMetricFactory
 from txstatsd.metrics.distinctmetric import DistinctMetricReporter
 
 
+@implementer(IMetricFactory, IPlugin)
 class DistinctMetricFactory(object):
-    implements(IMetricFactory, IPlugin)
 
-    name = "pdistinct"
-    metric_type = "pd"
+    name = b"pdistinct"
+    metric_type = b"pd"
 
     def build_metric(self, prefix, name, wall_time_func=None):
-        return DistinctMetricReporter(name, prefix=prefix,
-                                      wall_time_func=wall_time_func)
+        return DistinctMetricReporter(
+            name,
+            prefix=prefix,
+            wall_time_func=wall_time_func
+        )
 
     def configure(self, options):
         pass

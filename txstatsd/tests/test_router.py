@@ -58,11 +58,11 @@ class RouteMessagesTest(TestCase):
         """
         processor = MessageProcessor()
         router = Router(processor, "")
-        router.process("gorets:1|c")
+        router.process(b"gorets:1|c")
         self.assertEqual(len(processor.counter_metrics), 1)
 
     def test_receive_counter(self):
-        self.router.process("gorets:1|c")
+        self.router.process(b"gorets:1|c")
         self.assertEqual(len(self.processor.messages), 1)
 
     def test_any_and_drop(self):
@@ -70,7 +70,7 @@ class RouteMessagesTest(TestCase):
         Any message gets dropped with the drop rule.
         """
         self.update_rules("any => drop")
-        self.router.process("gorets:1|c")
+        self.router.process(b"gorets:1|c")
         self.assertEqual(len(self.processor.messages), 0)
 
     def test_metric_path_like(self):
@@ -78,19 +78,19 @@ class RouteMessagesTest(TestCase):
         path_like matches glob expressions.
         """
         self.update_rules("path_like goret* => drop")
-        self.router.process("gorets:1|c")
-        self.router.process("gorets:1|d")
-        self.router.process("goret:1|d")
-        self.router.process("nomatch:1|d")
+        self.router.process(b"gorets:1|c")
+        self.router.process(b"gorets:1|d")
+        self.router.process(b"goret:1|d")
+        self.router.process(b"nomatch:1|d")
         self.assertEqual(len(self.processor.messages), 1)
-        self.assertEqual(self.processor.messages[0][2], "nomatch")
+        self.assertEqual(self.processor.messages[0][2], b"nomatch")
 
     def test_receive_two_rules_no_match(self):
         """
         Messages that do not match more than one rule are processed just fine.
         """
         self.update_rules("path_like goret* => drop\npath_like glork* => drop\n")
-        self.router.process("nomatch:1|c")
+        self.router.process(b"nomatch:1|c")
         self.assertEqual(len(self.processor.messages), 1)
 
     def test_not(self):
@@ -98,21 +98,21 @@ class RouteMessagesTest(TestCase):
         Messages not matching the path_like expression get dropped.
         """
         self.update_rules("not path_like goret* => drop")
-        self.router.process("gorets:1|c")
-        self.router.process("nomatch:1|d")
+        self.router.process(b"gorets:1|c")
+        self.router.process(b"nomatch:1|d")
         self.assertEqual(len(self.processor.messages), 1)
-        self.assertEqual(self.processor.messages[0][2], "gorets")
+        self.assertEqual(self.processor.messages[0][2], b"gorets")
 
     def test_rewrite(self):
         """
         Process all messages but only rewrite matching ones.
         """
         self.update_rules(r"any => rewrite (gorets) glork.\1")
-        self.router.process("gorets:1|c")
-        self.router.process("nomatch:1|d")
+        self.router.process(b"gorets:1|c")
+        self.router.process(b"nomatch:1|d")
         self.assertEqual(len(self.processor.messages), 2)
-        self.assertEqual(self.processor.messages[0][2], "glork.gorets")
-        self.assertEqual(self.processor.messages[1][2], "nomatch")
+        self.assertEqual(self.processor.messages[0][2], b"glork.gorets")
+        self.assertEqual(self.processor.messages[1][2], b"nomatch")
 
     def test_rewrite_and_dup(self):
         """
@@ -120,12 +120,12 @@ class RouteMessagesTest(TestCase):
         then duplicate original message without rewriting it.
         """
         self.update_rules(r"any => rewrite (gorets) glork.\1 dup")
-        self.router.process("gorets:1|c")
-        self.router.process("nomatch:1|d")
+        self.router.process(b"gorets:1|c")
+        self.router.process(b"nomatch:1|d")
         self.assertEqual(len(self.processor.messages), 3)
-        self.assertEqual(self.processor.messages[0][2], "gorets")
-        self.assertEqual(self.processor.messages[1][2], "glork.gorets")
-        self.assertEqual(self.processor.messages[2][2], "nomatch")
+        self.assertEqual(self.processor.messages[0][2], b"gorets")
+        self.assertEqual(self.processor.messages[1][2], b"glork.gorets")
+        self.assertEqual(self.processor.messages[2][2], b"nomatch")
 
     def test_rewrite_and_no_dup(self):
         """
@@ -133,20 +133,20 @@ class RouteMessagesTest(TestCase):
         to no-dup, then the original message is not duplicated.
         """
         self.update_rules(r"any => rewrite (gorets) glork.\1 no-dup")
-        self.router.process("gorets:1|c")
-        self.router.process("nomatch:1|d")
+        self.router.process(b"gorets:1|c")
+        self.router.process(b"nomatch:1|d")
         self.assertEqual(len(self.processor.messages), 2)
-        self.assertEqual(self.processor.messages[0][2], "glork.gorets")
-        self.assertEqual(self.processor.messages[1][2], "nomatch")
+        self.assertEqual(self.processor.messages[0][2], b"glork.gorets")
+        self.assertEqual(self.processor.messages[1][2], b"nomatch")
 
     def test_set_metric_type(self):
         """
         Set metric type to something else.
         """
         self.update_rules(r"any => set_metric_type d")
-        self.router.process("gorets:1|c")
+        self.router.process(b"gorets:1|c")
         self.assertEqual(self.processor.messages[0][1], "d")
-        self.assertEqual(self.processor.messages[0][2], "gorets")
+        self.assertEqual(self.processor.messages[0][2], b"gorets")
 
     def test_set_metric_type_dup(self):
         """
@@ -154,11 +154,11 @@ class RouteMessagesTest(TestCase):
         the original message.
         """
         self.update_rules(r"any => set_metric_type d dup")
-        self.router.process("gorets:1|c")
-        self.assertEqual(self.processor.messages[0][1], "c")
-        self.assertEqual(self.processor.messages[0][2], "gorets")
+        self.router.process(b"gorets:1|c")
+        self.assertEqual(self.processor.messages[0][1], b"c")
+        self.assertEqual(self.processor.messages[0][2], b"gorets")
         self.assertEqual(self.processor.messages[1][1], "d")
-        self.assertEqual(self.processor.messages[1][2], "gorets")
+        self.assertEqual(self.processor.messages[1][2], b"gorets")
 
     def test_set_metric_type_no_dup(self):
         """
@@ -166,9 +166,9 @@ class RouteMessagesTest(TestCase):
         then do not duplicate the original message.
         """
         self.update_rules(r"any => set_metric_type d no-dup")
-        self.router.process("gorets:1|c")
+        self.router.process(b"gorets:1|c")
         self.assertEqual(self.processor.messages[0][1], "d")
-        self.assertEqual(self.processor.messages[0][2], "gorets")
+        self.assertEqual(self.processor.messages[0][2], b"gorets")
 
 
 class TestUDPRedirect(TxTestCase):
@@ -201,7 +201,7 @@ class TestUDPRedirect(TxTestCase):
         """
         Any message gets dropped with the drop rule.
         """
-        message = "gorets:1|c"
+        message = b"gorets:1|c"
         d = defer.Deferred()
 
         def got_data(data):

@@ -53,7 +53,7 @@ class MeterMetricReporter(object):
     interval.
     """
 
-    def __init__(self, name, wall_time_func=time.time, prefix=""):
+    def __init__(self, name, wall_time_func=time.time, prefix=b""):
         """Construct a metric we expect to be periodically updated.
 
         @param name: Indicates what is being instrumented.
@@ -63,7 +63,7 @@ class MeterMetricReporter(object):
         self.wall_time_func = wall_time_func
 
         if prefix:
-            prefix += "."
+            prefix += b"."
         self.prefix = prefix
 
         self.value = self.count = 0
@@ -95,11 +95,11 @@ class MeterMetricReporter(object):
 
         metrics = []
         items = {
-            ".count": self.count,
-            ".rate": rate
+            b".count": self.count,
+            b".rate": rate
             }
 
-        for item, value in sorted(items.iteritems()):
+        for item, value in sorted(items.items()):
             metrics.append((self.prefix + self.name + item,
                             round(value, 6), timestamp))
         return metrics
