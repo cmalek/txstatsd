@@ -51,6 +51,8 @@ class SBoxHash(object):
     def hash(self, data):
         value = 0
         for c in data:
+            if not isinstance(c, int):
+                c = ord(c)
             value = value ^ self.table[c]
             value = value * 3
             value = value & 0xFFFFFFFF

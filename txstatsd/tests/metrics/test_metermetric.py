@@ -38,7 +38,7 @@ class TestDeriveMetricReporter(TestCase):
         random.seed(1)
 
         wall_time = [0]
-        reporter = MeterMetricReporter("test", prefix="some.prefix",
+        reporter = MeterMetricReporter(b"test", prefix=b"some.prefix",
                                        wall_time_func=lambda: wall_time[0])
         reporter.mark(42)
         reporter.mark(60)
@@ -50,5 +50,5 @@ class TestDeriveMetricReporter(TestCase):
         self.assertEqual(140, reported[0][1])
         self.assertEqual(14, reported[1][1])
         self.assertEqual(
-            ['some.prefix.test.count', 'some.prefix.test.rate'],
+            [b'some.prefix.test.count', b'some.prefix.test.rate'],
             [reported[0][0], reported[1][0]])

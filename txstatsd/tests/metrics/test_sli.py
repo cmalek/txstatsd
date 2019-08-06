@@ -71,9 +71,9 @@ class TestParsing(TestCase):
         self.processor = TestMessageProcessor()
 
     def test_parse(self):
-        self.processor.process('txstatsd.tests.users:100|sli')
-        self.processor.process('txstatsd.tests.users:100|sli|2')
-        self.processor.process('txstatsd.tests.users:error|sli')
+        self.processor.process(b'txstatsd.tests.users:100|sli')
+        self.processor.process(b'txstatsd.tests.users:100|sli|2')
+        self.processor.process(b'txstatsd.tests.users:error|sli')
 
 
 class TestMetric(TestCase):
