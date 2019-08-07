@@ -38,7 +38,7 @@ STATSD_HOST = "127.0.0.1"
 STATSD_PORT = 8125
 
 application = Application("example-stats-client")
-statsd_client = TwistedStatsDClient(STATSD_HOST, STATSD_PORT)
+statsd_client = TwistedStatsDClient.create(STATSD_HOST, STATSD_PORT)
 metrics = Metrics(connection=statsd_client,
                   namespace=socket.gethostname() + ".example-client")
 
