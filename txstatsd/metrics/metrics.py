@@ -211,7 +211,6 @@ class Metrics(object):
     def write(self, data):
         """Message the C{data} to the C{StatsD} server."""
         if self.connection is not None:
-            print("WRITING DATA: {}".format(data))
             self.connection.write(data.encode('utf-8'))
 
     def clear_all(self):
