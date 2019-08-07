@@ -41,12 +41,13 @@ class Metric(object):
         self.connection = connection
         self.name = name
         self.sample_rate = sample_rate
+        self.data = []
 
     def clear(self):
         """Responsibility of the specialized metrics."""
-        pass
+        self.data = []
 
-    def send(self, data):
+    def send(self, data, pipeline=False):
         """
         Message the C{data} to the C{StatsD} server according to the
         C{sample_rate}.
@@ -59,9 +60,18 @@ class Metric(object):
 
         data = self.name + ":" + data
 
-        self.write(data)
+        if pipeline:
+            self.data.append(data)
+        else:
+            self.write(data)
 
     def write(self, data):
         """Message the C{data} to the C{StatsD} server."""
         if self.connection is not None:
             self.connection.write(data.encode('utf-8'))
+
+    def flush(self):
+        """
+        Flush any pipelined data. to the C{StatsD} server.
+        """
+        return self.data

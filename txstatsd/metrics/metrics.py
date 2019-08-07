@@ -20,6 +20,7 @@
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 import time
+from collections import deque
 from txstatsd.metrics.gaugemetric import GaugeMetric
 from txstatsd.metrics.metermetric import MeterMetric
 from txstatsd.metrics.distinctmetric import DistinctMetric
@@ -61,9 +62,11 @@ class Metrics(object):
         """
         name = self.fully_qualify_name(name)
         if not name in self._metrics:
-            metric = GenericMetric(self.connection,
-                                        metric_type,
-                                        name)
+            metric = GenericMetric(
+                self.connection,
+                metric_type,
+                name
+            )
             self._metrics[name] = metric
         self._metrics[name].mark(value, extra)
 
@@ -88,9 +91,11 @@ class Metrics(object):
         """Report an instantaneous reading of a particular value."""
         name = self.fully_qualify_name(name)
         if not name in self._metrics:
-            gauge_metric = GaugeMetric(self.connection,
-                                       name,
-                                       sample_rate)
+            gauge_metric = GaugeMetric(
+                self.connection,
+                name,
+                sample_rate
+            )
             self._metrics[name] = gauge_metric
         self._metrics[name].mark(value)
 
@@ -98,31 +103,37 @@ class Metrics(object):
         """Mark the occurrence of a given number of events."""
         name = self.fully_qualify_name(name)
         if not name in self._metrics:
-            meter_metric = MeterMetric(self.connection,
-                                       name,
-                                       sample_rate)
+            meter_metric = MeterMetric(
+                self.connection,
+                name,
+                sample_rate
+            )
             self._metrics[name] = meter_metric
         self._metrics[name].mark(value)
 
-    def increment(self, name, value=1, sample_rate=1):
+    def increment(self, name, value=1, sample_rate=1, pipeline=False):
         """Report and increase in name by count."""
         name = self.fully_qualify_name(name)
         if not name in self._metrics:
-            metric = Metric(self.connection,
-                            name,
-                            sample_rate)
+            metric = Metric(
+                self.connection,
+                name,
+                sample_rate
+            )
             self._metrics[name] = metric
-        self._metrics[name].send("%s|c" % value)
+        self._metrics[name].send("%s|c" % value, pipeline=pipeline)
 
-    def decrement(self, name, value=1, sample_rate=1):
+    def decrement(self, name, value=1, sample_rate=1, pipeline=False):
         """Report and decrease in name by count."""
         name = self.fully_qualify_name(name)
         if not name in self._metrics:
-            metric = Metric(self.connection,
-                            name,
-                            sample_rate)
+            metric = Metric(
+                self.connection,
+                name,
+                sample_rate
+            )
             self._metrics[name] = metric
-        self._metrics[name].send("%s|c" % -value)
+        self._metrics[name].send("%s|c" % -value, pipeline=pipeline)
 
     def reset_timing(self):
         """Resets the duration timer for the next call to timing()"""
@@ -135,7 +146,7 @@ class Metrics(object):
         self.last_time = current_time
         return duration
 
-    def timing(self, name, duration=None, sample_rate=1):
+    def timing(self, name, duration=None, sample_rate=1, pipeline=False):
         """Report that this sample performed in duration seconds.
            Default duration is the actual elapsed time since
            the last call to this method or reset_timing()"""
@@ -143,11 +154,13 @@ class Metrics(object):
             duration = self.calculate_duration()
         name = self.fully_qualify_name(name)
         if not name in self._metrics:
-            metric = Metric(self.connection,
-                            name,
-                            sample_rate)
+            metric = Metric(
+                self.connection,
+                name,
+                sample_rate
+            )
             self._metrics[name] = metric
-        self._metrics[name].send("%s|ms" % (duration * 1000))
+        self._metrics[name].send("%s|ms" % (duration * 1000), pipeline=pipeline)
 
     def distinct(self, name, item):
         name = self.fully_qualify_name(name)
@@ -176,3 +189,34 @@ class Metrics(object):
             else:
                 fully_qualified_name = name
         return fully_qualified_name
+
+    def flush(self):
+        """Flush any pipelined data. to the C{StatsD} server."""
+        _data = deque([])
+        for name in self._metrics:
+            metric = self._metrics[name]
+            if getattr(metric, 'flush', None) is not None:
+                _data += metric.flush()
+        data = _data.popleft()
+        while _data:
+            stat = _data.popleft()
+            # 512 is our max UDP packet size; ensure we don't exceed that.
+            if len(stat) + len(data) + 1 >= 512:
+                self.write(data)
+                data = stat
+            else:
+                data += '\n' + stat
+        self.write(data)
+
+    def write(self, data):
+        """Message the C{data} to the C{StatsD} server."""
+        if self.connection is not None:
+            print("WRITING DATA: {}".format(data))
+            self.connection.write(data.encode('utf-8'))
+
+    def clear_all(self):
+        """Allow the metric to re-initialize its internal state."""
+        for name in self._metrics:
+            metric = self._metrics[name]
+            if getattr(metric, 'clear', None) is not None:
+                metric.clear()
